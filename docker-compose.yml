@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+ganache:
+image: trufflesuite/ganache:v7.9.2
+command: ["--wallet.totalAccounts=10", "--wallet.defaultBalance=1000", "--chain.chainId=1337", "--server.host=0.0.0.0"]
+ports:
+- "8545:8545"
+
+
+web:
+build: .
+environment:
+NEXT_PUBLIC_RPC_URL: http://ganache:8545
+NEXT_PUBLIC_CHAIN_ID: 1337
+NEXT_PUBLIC_CONTRACT_ADDRESS: 0xYourLocalDeployedContract
+ports:
+- "3000:3000"
+depends_on:
+- ganache

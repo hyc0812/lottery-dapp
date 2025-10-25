@@ -1,0 +1,1245 @@
+[00:00:01.551] Server  LOG      ✓ Ready in 991ms
+[00:00:39.568] Server  LOG      ✓ Compiled in 24ms
+[00:00:39.706] Browser LOG     Refreshing page data due to server-side change
+[00:00:39.706] Browser ERROR   %o
+
+%s
+
+%s
+ {} The above error occurred in the <Home> component. React will try to recreate this component tree from scratch using the error boundary you provided, PagesDevOverlayErrorBoundary.
+[00:00:44.685] Server  ERROR   ReferenceError: styles is not defined
+[00:00:44.693] Server  ERROR    ⨯ ReferenceError: styles is not defined
+[00:00:44.700] Server  ERROR    ⨯ ReferenceError: styles is not defined
+[00:00:45.119] Browser ERROR   uncaughtError: ReferenceError: styles is not defined
+[00:03:28.700] Server  ERROR   ReferenceError: styles is not defined
+[00:03:28.707] Server  ERROR    ⨯ ReferenceError: styles is not defined
+[00:03:28.715] Server  ERROR    ⨯ ReferenceError: styles is not defined
+[00:03:28.959] Browser ERROR   uncaughtError: ReferenceError: styles is not defined
+[00:03:29.629] Server  ERROR   ReferenceError: styles is not defined
+[00:03:29.636] Server  ERROR    ⨯ ReferenceError: styles is not defined
+[00:03:29.640] Server  ERROR    ⨯ ReferenceError: styles is not defined
+[00:03:29.847] Browser ERROR   uncaughtError: ReferenceError: styles is not defined
+[00:04:33.551] Server  WARN     ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[00:04:33.612] Server  WARN     ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[00:04:33.630] Server  ERROR    ⨯ ./Downloads/lottery-frontend/pages/index.tsx:10:1
+Module not found: Can't resolve '@/lib/abi'
+   8 | } from 'wagmi';
+   9 | import { injected } from 'wagmi/connectors';
+> 10 | import { lotteryAbi } from '@/lib/abi';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |
+  12 | const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
+  13 |
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:04:33.634] Server  ERROR    ⨯ ./Downloads/lottery-frontend/pages/index.tsx:10:1
+Module not found: Can't resolve '@/lib/abi'
+   8 | } from 'wagmi';
+   9 | import { injected } from 'wagmi/connectors';
+> 10 | import { lotteryAbi } from '@/lib/abi';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |
+  12 | const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
+  13 |
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:04:33.638] Server  ERROR    ⨯ ./Downloads/lottery-frontend/pages/index.tsx:10:1
+Module not found: Can't resolve '@/lib/abi'
+   8 | } from 'wagmi';
+   9 | import { injected } from 'wagmi/connectors';
+> 10 | import { lotteryAbi } from '@/lib/abi';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |
+  12 | const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
+  13 |
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:04:33.642] Server  ERROR    ⨯ ./Downloads/lottery-frontend/pages/index.tsx:10:1
+Module not found: Can't resolve '@/lib/abi'
+   8 | } from 'wagmi';
+   9 | import { injected } from 'wagmi/connectors';
+> 10 | import { lotteryAbi } from '@/lib/abi';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |
+  12 | const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
+  13 |
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:04:33.650] Server  ERROR    ⨯ ./Downloads/lottery-frontend/pages/index.tsx:10:1
+Module not found: Can't resolve '@/lib/abi'
+   8 | } from 'wagmi';
+   9 | import { injected } from 'wagmi/connectors';
+> 10 | import { lotteryAbi } from '@/lib/abi';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |
+  12 | const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
+  13 |
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:04:34.042] Browser ERROR   uncaughtError: Error: ./Downloads/lottery-frontend/pages/index.tsx:10:1
+Module not found: Can't resolve '@/lib/abi'
+   8 | } from 'wagmi';
+   9 | import { injected } from 'wagmi/connectors';
+> 10 | import { lotteryAbi } from '@/lib/abi';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |
+  12 | const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
+  13 |
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:04:34.247] Browser ERROR   ./Downloads/lottery-frontend/pages/index.tsx:10:1
+Module not found: Can't resolve '@/lib/abi'
+   8 | } from 'wagmi';
+   9 | import { injected } from 'wagmi/connectors';
+> 10 | import { lotteryAbi } from '@/lib/abi';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |
+  12 | const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
+  13 |
+
+https://nextjs.org/docs/messages/module-not-found
+[00:04:34.247] Browser ERROR   ./Downloads/lottery-frontend/pages/index.tsx:10:1
+Module not found: Can't resolve '@/lib/abi'
+   8 | } from 'wagmi';
+   9 | import { injected } from 'wagmi/connectors';
+> 10 | import { lotteryAbi } from '@/lib/abi';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |
+  12 | const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
+  13 |
+
+https://nextjs.org/docs/messages/module-not-found
+[00:04:42.196] Server  LOG      ✓ Compiled in 37ms
+[00:04:42.297] Browser ERROR   ./Downloads/lottery-frontend/pages/index.tsx:10:1
+Module not found: Can't resolve '@/lib/abi'
+   8 | } from 'wagmi';
+   9 | import { injected } from 'wagmi/connectors';
+> 10 | import { lotteryAbi } from '@/lib/abi';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |
+  12 | const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
+  13 |
+
+https://nextjs.org/docs/messages/module-not-found
+[00:04:47.924] Server  WARN     ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[00:12:15.914] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:12:15.915] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:12:15.954] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:12:15.955] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:12:15.956] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:12:15.957] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:12:15.959] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:12:15.960] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:12:15.961] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:12:15.963] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:12:15.986] Server  LOG      ✓ Compiled in 73ms
+[00:12:16.088] Browser ERROR   ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+[00:14:50.807] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:14:50.808] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:14:50.809] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:14:50.810] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:14:50.838] Server  LOG      ✓ Compiled in 62ms
+[00:14:50.940] Browser ERROR   ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+[00:15:02.972] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:02.973] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:02.974] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:02.974] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:02.982] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:02.982] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:02.984] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:02.987] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:02.988] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:02.989] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:02.991] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:03.002] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:03.003] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:03.232] Browser ERROR   uncaughtError: Error: Cannot find module 'wagmi/storage'
+[00:15:03.452] Browser ERROR   ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+[00:15:03.452] Browser ERROR   ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+[00:15:03.452] Browser ERROR   ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+[00:15:03.452] Browser ERROR   ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+[00:15:03.993] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:03.994] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:03.995] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:03.996] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:04.001] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:04.003] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:04.005] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:04.012] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:04.013] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:04.015] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:04.016] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:04.019] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:04.021] Server  ERROR    ⨯ ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:15:04.215] Browser ERROR   uncaughtError: Error: Cannot find module 'wagmi/storage'
+[00:15:04.429] Browser ERROR   ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+[00:15:04.429] Browser ERROR   ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+[00:15:04.429] Browser ERROR   ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+[00:15:04.429] Browser ERROR   ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+Import traces:
+  Browser:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+[00:15:26.351] Server  LOG      ✓ Compiled in 22ms
+[00:15:26.453] Browser ERROR   ./Downloads/lottery-frontend/lib/wagmi.ts:5:1
+Module not found: Can't resolve 'wagmi/storage'
+  3 | import { defineChain } from 'viem';
+  4 | import { injected } from 'wagmi/connectors';
+> 5 | import { createStorage } from 'wagmi/storage';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 |
+  7 | // ✅ 定义 Ganache 本地区块链网络
+  8 | export const ganache = defineChain({
+
+Import trace:
+  SSR:
+    ./Downloads/lottery-frontend/lib/wagmi.ts
+    ./Downloads/lottery-frontend/pages/_app.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+[00:15:33.242] Server  WARN     ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[00:15:33.244] Server  WARN     ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[00:15:33.244] Server  WARN     ⚠ Fast Refresh had to perform a full reload when ./Downloads/lottery-frontend/lib/wagmi.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[00:15:33.245] Server  WARN     ⚠ Fast Refresh had to perform a full reload due to a runtime error.
