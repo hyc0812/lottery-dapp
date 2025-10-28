@@ -88,6 +88,14 @@ export default function Home() {
     async function fetchOwner() {
       if (!publicClient) return; 
       try {
+        const bytecode = await publicClient.getBytecode({ address: CONTRACT });
+
+        if (!bytecode) {
+          console.error(
+            'The configured contract address has no bytecode on the connected chain. Check NEXT_PUBLIC_RPC_URL / NEXT_PUBLIC_CHAIN_ID.',
+          );
+          return;
+        }
         const ownerAddress = await publicClient.readContract({
           address: CONTRACT,
           abi: lotteryAbi,
@@ -349,7 +357,7 @@ export default function Home() {
           />
         </div>
         <div style={styles.row}>
-          <label>ETH amount:</label>当前的 .env.local 文件里是否有 NEXT_PUBLIC_CONTRACT_ADDRESS
+          <label>ETH amount:</label>
           <input
             value={betEth}
             onChange={(e) => setBetEth(e.target.value)}

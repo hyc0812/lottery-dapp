@@ -943,7 +943,7 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
-const CONTRACT = ("TURBOPACK compile-time value", "0x583AFB148a4E82564cF370E5a56E613cdC7981D6");
+const CONTRACT = ("TURBOPACK compile-time value", "0x6Fd6657Fe50E24011Ff329d38DB52d6B4209a75B");
 function Home() {
     _s();
     const { address, isConnected } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useAccount$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useAccount"])();
@@ -1018,6 +1018,13 @@ function Home() {
             async function fetchOwner() {
                 if (!publicClient) return;
                 try {
+                    const bytecode = await publicClient.getBytecode({
+                        address: CONTRACT
+                    });
+                    if (!bytecode) {
+                        console.error('The configured contract address has no bytecode on the connected chain. Check NEXT_PUBLIC_RPC_URL / NEXT_PUBLIC_CHAIN_ID.');
+                        return;
+                    }
                     const ownerAddress = await publicClient.readContract({
                         address: CONTRACT,
                         abi: __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$lib$2f$abi$2e$ts__$5b$client$5d$__$28$ecmascript$29$__["lotteryAbi"],
@@ -1192,7 +1199,7 @@ function Home() {
                         children: "🎯 Lottery DApp"
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 236,
+                        lineNumber: 244,
                         columnNumber: 9
                     }, this),
                     address && owner && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1203,7 +1210,7 @@ function Home() {
                         children: address.toLowerCase() === owner.toLowerCase() ? '🧑‍💼 Role: Owner' : '🎟️ Role: Player'
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 238,
+                        lineNumber: 246,
                         columnNumber: 11
                     }, this),
                     isConnected ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1218,7 +1225,7 @@ function Home() {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 246,
+                                lineNumber: 254,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1227,13 +1234,13 @@ function Home() {
                                 children: "Disconnect"
                             }, void 0, false, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 249,
+                                lineNumber: 257,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 245,
+                        lineNumber: 253,
                         columnNumber: 11
                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                         style: styles.connectBtn,
@@ -1243,13 +1250,13 @@ function Home() {
                         children: "Connect Wallet"
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 254,
+                        lineNumber: 262,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                lineNumber: 235,
+                lineNumber: 243,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1259,7 +1266,7 @@ function Home() {
                         children: "📊 Round Snapshot"
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 265,
+                        lineNumber: 273,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1273,20 +1280,20 @@ function Home() {
                                         children: "Current Round ID"
                                     }, void 0, false, {
                                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                        lineNumber: 268,
+                                        lineNumber: 276,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
                                         children: currentRoundIdData ? currentRoundIdData.toString() : '—'
                                     }, void 0, false, {
                                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                        lineNumber: 269,
+                                        lineNumber: 277,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 267,
+                                lineNumber: 275,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1297,20 +1304,20 @@ function Home() {
                                         children: "Viewing Round"
                                     }, void 0, false, {
                                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                        lineNumber: 274,
+                                        lineNumber: 282,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
                                         children: roundId > 0 ? `#${roundId}` : '—'
                                     }, void 0, false, {
                                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                        lineNumber: 275,
+                                        lineNumber: 283,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 273,
+                                lineNumber: 281,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1321,20 +1328,20 @@ function Home() {
                                         children: "Total Pool"
                                     }, void 0, false, {
                                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                        lineNumber: 278,
+                                        lineNumber: 286,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
                                         children: isRoundInfoLoading ? 'Loading...' : totalPoolEth ? `${totalPoolEth} ETH` : '—'
                                     }, void 0, false, {
                                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                        lineNumber: 279,
+                                        lineNumber: 287,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 277,
+                                lineNumber: 285,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1345,59 +1352,11 @@ function Home() {
                                         children: "Winner"
                                     }, void 0, false, {
                                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                        lineNumber: 288,
-                                        columnNumber: 13
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                        children: winnerAddress ?? '—'
-                                    }, void 0, false, {
-                                        fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                        lineNumber: 289,
-                                        columnNumber: 13
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 287,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                style: styles.infoItem,
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                        style: styles.infoLabel,
-                                        children: "Closes At"
-                                    }, void 0, false, {
-                                        fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                        lineNumber: 292,
-                                        columnNumber: 13
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                        children: closeTimeDisplay ?? '—'
-                                    }, void 0, false, {
-                                        fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                        lineNumber: 293,
-                                        columnNumber: 13
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 291,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                style: styles.infoItem,
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                        style: styles.infoLabel,
-                                        children: "Status"
-                                    }, void 0, false, {
-                                        fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
                                         lineNumber: 296,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                        children: roundInfo ? roundInfo[1] ? 'Finalized' : roundInfo[0] ? 'Open' : 'Closed' : '—'
+                                        children: winnerAddress ?? '—'
                                     }, void 0, false, {
                                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
                                         lineNumber: 297,
@@ -1408,11 +1367,59 @@ function Home() {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
                                 lineNumber: 295,
                                 columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                style: styles.infoItem,
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        style: styles.infoLabel,
+                                        children: "Closes At"
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 300,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
+                                        children: closeTimeDisplay ?? '—'
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 301,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
+                                lineNumber: 299,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                style: styles.infoItem,
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        style: styles.infoLabel,
+                                        children: "Status"
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 304,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
+                                        children: roundInfo ? roundInfo[1] ? 'Finalized' : roundInfo[0] ? 'Open' : 'Closed' : '—'
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 305,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
+                                lineNumber: 303,
+                                columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 266,
+                        lineNumber: 274,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1425,18 +1432,18 @@ function Home() {
                             children: "🔄 Refresh Data"
                         }, void 0, false, {
                             fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                            lineNumber: 309,
+                            lineNumber: 317,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 308,
+                        lineNumber: 316,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                lineNumber: 264,
+                lineNumber: 272,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1446,7 +1453,7 @@ function Home() {
                         children: "🎛 Admin / Round Control"
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 317,
+                        lineNumber: 325,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1456,38 +1463,13 @@ function Home() {
                                 children: "Round ID:"
                             }, void 0, false, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 319,
+                                lineNumber: 327,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
                                 type: "number",
                                 value: roundId,
                                 onChange: (e)=>setRoundId(parseInt(e.target.value))
-                            }, void 0, false, {
-                                fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 320,
-                                columnNumber: 11
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 318,
-                        columnNumber: 9
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        style: styles.row,
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                children: "Close in seconds:"
-                            }, void 0, false, {
-                                fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 327,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                type: "number",
-                                value: closeSeconds,
-                                onChange: (e)=>setCloseSeconds(parseInt(e.target.value))
                             }, void 0, false, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
                                 lineNumber: 328,
@@ -1500,30 +1482,22 @@ function Home() {
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        style: styles.btnRow,
+                        style: styles.row,
                         children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                                onClick: openRound,
-                                children: "openRound"
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                children: "Close in seconds:"
                             }, void 0, false, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
                                 lineNumber: 335,
                                 columnNumber: 11
                             }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                                onClick: closeRound,
-                                children: "closeRound"
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                type: "number",
+                                value: closeSeconds,
+                                onChange: (e)=>setCloseSeconds(parseInt(e.target.value))
                             }, void 0, false, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
                                 lineNumber: 336,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                                onClick: finalizeRound,
-                                children: "finalizeRound"
-                            }, void 0, false, {
-                                fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 337,
                                 columnNumber: 11
                             }, this)
                         ]
@@ -1531,11 +1505,44 @@ function Home() {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
                         lineNumber: 334,
                         columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        style: styles.btnRow,
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                onClick: openRound,
+                                children: "openRound"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
+                                lineNumber: 343,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                onClick: closeRound,
+                                children: "closeRound"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
+                                lineNumber: 344,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                onClick: finalizeRound,
+                                children: "finalizeRound"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
+                                lineNumber: 345,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
+                        lineNumber: 342,
+                        columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                lineNumber: 316,
+                lineNumber: 324,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1545,7 +1552,7 @@ function Home() {
                         children: "🎲 Player Panel"
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 343,
+                        lineNumber: 351,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1555,7 +1562,7 @@ function Home() {
                                 children: "Bet (hex bytes):"
                             }, void 0, false, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 345,
+                                lineNumber: 353,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1563,13 +1570,13 @@ function Home() {
                                 onChange: (e)=>setBetHex(e.target.value)
                             }, void 0, false, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 346,
+                                lineNumber: 354,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 344,
+                        lineNumber: 352,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1579,22 +1586,21 @@ function Home() {
                                 children: "ETH amount:"
                             }, void 0, false, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 352,
+                                lineNumber: 360,
                                 columnNumber: 11
                             }, this),
-                            "当前的 .env.local 文件里是否有 NEXT_PUBLIC_CONTRACT_ADDRESS",
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
                                 value: betEth,
                                 onChange: (e)=>setBetEth(e.target.value)
                             }, void 0, false, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 353,
+                                lineNumber: 361,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 351,
+                        lineNumber: 359,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1603,13 +1609,13 @@ function Home() {
                         children: "placeBet (payable)"
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 358,
+                        lineNumber: 366,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                lineNumber: 342,
+                lineNumber: 350,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1619,7 +1625,7 @@ function Home() {
                         children: "📜 Oracle / Result"
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 365,
+                        lineNumber: 373,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1629,7 +1635,7 @@ function Home() {
                                 children: "Result (hex bytes):"
                             }, void 0, false, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 367,
+                                lineNumber: 375,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1637,13 +1643,13 @@ function Home() {
                                 onChange: (e)=>setResultHex(e.target.value)
                             }, void 0, false, {
                                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                                lineNumber: 368,
+                                lineNumber: 376,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 366,
+                        lineNumber: 374,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1651,13 +1657,13 @@ function Home() {
                         children: "fulfillResult"
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 373,
+                        lineNumber: 381,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                lineNumber: 364,
+                lineNumber: 372,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1667,7 +1673,7 @@ function Home() {
                         children: "💰 Claim Reward"
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 378,
+                        lineNumber: 386,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1675,19 +1681,19 @@ function Home() {
                         children: "claim"
                     }, void 0, false, {
                         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                        lineNumber: 379,
+                        lineNumber: 387,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-                lineNumber: 377,
+                lineNumber: 385,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/Downloads/lottery-frontend/pages/index.tsx",
-        lineNumber: 233,
+        lineNumber: 241,
         columnNumber: 5
     }, this);
 }
