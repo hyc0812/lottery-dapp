@@ -1,4 +1,5 @@
 'use client';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   useAccount,
@@ -6,12 +7,16 @@ import {
   useDisconnect,
   useReadContract,
   useWriteContract,
+  usePublicClient,
+  useBlockNumber,
 } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { lotteryAbi } from '../lib/abi';
 import { decodeAbiParameters, formatEther } from 'viem';
 
 const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
+
+
 
 export default function Home() {
   const { address, isConnected } = useAccount();
@@ -25,6 +30,8 @@ export default function Home() {
   const [betHex, setBetHex] = useState<`0x${string}`>('0x01');
   const [betEth, setBetEth] = useState('0.001');
   const [resultHex, setResultHex] = useState<`0x${string}`>('0x01');
+  const [owner, setOwner] = useState<`0x${string}` | null>(null);
+  const publicClient = usePublicClient();
 
   // 🔹 current round
   const {
@@ -34,8 +41,8 @@ export default function Home() {
     address: CONTRACT,
     abi: lotteryAbi,
     functionName: 'currentRoundId',
-    query: { watch: true },
   });
+
 
   // 🔹 round info
   const roundArgs = useMemo(
@@ -46,14 +53,23 @@ export default function Home() {
   const {
     data: roundInfo,
     refetch: refetchRoundInfo,
-    isLoading: isRoundInfoLoading,
+    isFetching: isRoundInfoLoading,
   } = useReadContract({
     address: CONTRACT,
     abi: lotteryAbi,
     functionName: 'getRoundInfo',
     args: roundArgs,
-    query: { enabled: Boolean(roundArgs), watch: true },
   });
+
+  const { data: blockNumber } = useBlockNumber({ watch: true });
+
+  useEffect(() => {
+    if (blockNumber) {
+      refetchCurrentRound();
+      if (roundArgs) refetchRoundInfo();
+    }
+  }, [blockNumber]);
+
 
   const refreshRoundData = useCallback(() => {
     const promises: Promise<unknown>[] = [];
@@ -67,6 +83,24 @@ export default function Home() {
       setRoundId(Number(currentRoundIdData));
     }
   }, [currentRoundIdData, roundId]);
+
+  useEffect(() => {
+    async function fetchOwner() {
+      if (!publicClient) return; 
+      try {
+        const ownerAddress = await publicClient.readContract({
+          address: CONTRACT,
+          abi: lotteryAbi,
+          functionName: 'owner',
+        });
+        setOwner(ownerAddress as `0x${string}`);
+      } catch (err) {
+        console.error('Failed to fetch owner', err);
+      }
+    }
+    fetchOwner();
+  }, [publicClient]);
+
 
   const totalPoolEth = useMemo(() => {
     if (!roundInfo) return null;
@@ -200,6 +234,13 @@ export default function Home() {
       {/* Header */}
       <div style={styles.header}>
         <h1 style={{ margin: 0 }}>🎯 Lottery DApp</h1>
+        {address && owner && (
+          <p style={{ fontSize: 14, color: '#444' }}>
+            {address.toLowerCase() === owner.toLowerCase()
+              ? '🧑‍💼 Role: Owner'
+              : '🎟️ Role: Player'}
+          </p>
+        )}
         {isConnected ? (
           <div style={styles.walletBox}>
             <span style={styles.wallet}>
@@ -239,8 +280,8 @@ export default function Home() {
               {isRoundInfoLoading
                 ? 'Loading...'
                 : totalPoolEth
-                ? `${totalPoolEth} ETH`
-                : '—'}
+                  ? `${totalPoolEth} ETH`
+                  : '—'}
             </strong>
           </div>
           <div style={styles.infoItem}>
@@ -258,11 +299,16 @@ export default function Home() {
                 ? roundInfo[1]
                   ? 'Finalized'
                   : roundInfo[0]
-                  ? 'Open'
-                  : 'Closed'
+                    ? 'Open'
+                    : 'Closed'
                 : '—'}
             </strong>
           </div>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <button onClick={refreshRoundData} style={styles.mainBtn}>
+            🔄 Refresh Data
+          </button>
         </div>
       </div>
 
@@ -303,7 +349,7 @@ export default function Home() {
           />
         </div>
         <div style={styles.row}>
-          <label>ETH amount:</label>
+          <label>ETH amount:</label>当前的 .env.local 文件里是否有 NEXT_PUBLIC_CONTRACT_ADDRESS
           <input
             value={betEth}
             onChange={(e) => setBetEth(e.target.value)}
