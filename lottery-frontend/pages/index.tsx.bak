@@ -1,0 +1,323 @@
+import { useState } from 'react';
+import { useConnect, useAccount, useDisconnect } from 'wagmi';
+import { injected } from 'wagmi/connectors';
+import { useWriteContract } from 'wagmi';
+import { lotteryAbi } from '../lib/abi';  // 你的合约 ABI 文件
+
+
+export default function Home() {
+    const { address, isConnected } = useAccount();
+    const { connect } = useConnect();
+    const { disconnect } = useDisconnect();
+
+    const { writeContractAsync } = useWriteContract();
+    const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
+
+
+    const handleConnect = () => connect({ connector: injected() });
+    const [roundId, setRoundId] = useState(1);
+    const [closeSeconds, setCloseSeconds] = useState(0);
+    const [betHex, setBetHex] = useState('');
+    const [betEth, setBetEth] = useState('');
+    const [resultHex, setResultHex] = useState('');
+    const [hash, setHash] = useState('');
+    const [betCount, setBetCount] = useState<number | null>(null);
+    const [roundInfo, setRoundInfo] = useState<any>(null);
+    const [isPending, setIsPending] = useState(false);
+    const [isConfirming, setIsConfirming] = useState(false);
+    const [isConfirmed, setIsConfirmed] = useState(false);
+
+
+  
+    // your functions: openRound, closeRound, finalizeRound, etc.
+    const openRound = async () => {
+        try {
+          if (!isConnected) return alert('Please connect wallet first.');
+      
+          // 计算关闭时间戳
+          const closeTime = Math.floor(Date.now() / 1000) + closeSeconds;
+      
+          const tx = await writeContractAsync({
+            address: CONTRACT,
+            abi: lotteryAbi,
+            functionName: 'openRound',
+            args: [BigInt(closeTime)],
+          });
+          
+      
+          console.log('✅ Transaction sent:', tx);
+          alert('openRound transaction sent! Check Ganache.');
+        } catch (err: any) {
+          console.error('❌ openRound failed:', err);
+          alert(`Error: ${err.message}`);
+        }
+      };
+      
+      const closeRound = async () => {
+        try {
+          const tx = await writeContractAsync({
+            address: CONTRACT,
+            abi: lotteryAbi,
+            functionName: 'closeRound',
+            args: [BigInt(roundId)], // roundId 输入框中输入的值
+          });
+          console.log('✅ closeRound sent:', tx);
+          alert('closeRound transaction sent!');
+        } catch (err: any) {
+          console.error('❌ closeRound failed:', err);
+          alert(err.message);
+        }
+      };
+      
+      const finalizeRound = async () => {
+        try {
+          const tx = await writeContractAsync({
+            address: CONTRACT,
+            abi: lotteryAbi,
+            functionName: 'finalizeRound',
+            args: [BigInt(roundId)],
+          });
+          console.log('✅ finalizeRound sent:', tx);
+          alert('finalizeRound transaction sent!');
+        } catch (err: any) {
+          console.error('❌ finalizeRound failed:', err);
+          alert(err.message);
+        }
+      };
+      
+      const placeBet = async () => {
+        try {
+          const tx = await writeContractAsync({
+            address: CONTRACT,
+            abi: lotteryAbi,
+            functionName: 'placeBet',
+            args: [BigInt(roundId), betHex], // betHex 来自输入框
+            value: BigInt(Number(betEth) * 1e18), // ETH 金额
+          });
+          console.log('✅ placeBet sent:', tx);
+          alert('placeBet transaction sent!');
+        } catch (err: any) {
+          console.error('❌ placeBet failed:', err);
+          alert(err.message);
+        }
+      };
+      
+      const fulfillResult = async () => {
+        try {
+          const tx = await writeContractAsync({
+            address: CONTRACT,
+            abi: lotteryAbi,
+            functionName: 'fulfillResult',
+            args: [BigInt(roundId), resultHex], // resultHex 来自输入框
+          });
+          console.log('✅ fulfillResult sent:', tx);
+          alert('fulfillResult transaction sent!');
+        } catch (err: any) {
+          console.error('❌ fulfillResult failed:', err);
+          alert(err.message);
+        }
+      };
+      
+      const claim = async () => {
+        try {
+          const tx = await writeContractAsync({
+            address: CONTRACT,
+            abi: lotteryAbi,
+            functionName: 'claim',
+            args: [BigInt(roundId)],
+          });
+          console.log('✅ claim sent:', tx);
+          alert('claim transaction sent!');
+        } catch (err: any) {
+          console.error('❌ claim failed:', err);
+          alert(err.message);
+        }
+      };
+      
+  
+    return (
+      <main style={{ padding: 20 }}>
+        <section
+            style={{
+                marginBottom: 16,
+                padding: 12,
+                border: '1px solid #eee',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+            }}
+        >
+            <div>
+                <strong>Wallet:</strong>{' '}
+                {isConnected ? (
+                    <span>
+                        {address?.slice(0, 6)}...{address?.slice(-4)}
+                    </span>
+                ) : (
+                    <span>Not connected</span>
+                )}
+            </div>
+
+                {isConnected ? (
+                    <button onClick={() => disconnect()}>Disconnect</button>
+                    ) : (
+                    <button onClick={handleConnect}>Connect Wallet</button>
+                    )}
+        </section>
+        <section style={{ margin: '16px 0', padding: 16, border: '1px solid #eee', borderRadius: 12 }}>
+          <h3>Admin / Round Control</h3>
+          <label>
+            Round ID:
+            <input
+              type="number"
+              value={roundId}
+              onChange={(e) => setRoundId(parseInt(e.target.value || '1'))}
+              style={{ marginLeft: 8 }}
+            />
+          </label>
+          <div style={{ marginTop: 8 }}>
+            <label>
+              Close in seconds from NOW:
+              <input
+                type="number"
+                value={closeSeconds}
+                onChange={(e) => setCloseSeconds(parseInt(e.target.value || '0'))}
+                style={{ marginLeft: 8 }}
+              />
+            </label>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button onClick={openRound}>openRound</button>
+            <button onClick={closeRound}>closeRound</button>
+            <button onClick={finalizeRound}>finalizeRound</button>
+          </div>
+        </section>
+  
+        <section style={{ margin: '16px 0', padding: 16, border: '1px solid #eee', borderRadius: 12 }}>
+          <h3>Bet</h3>
+          <div>
+            <label>
+              Bet (hex bytes):
+              <input
+                value={betHex}
+                onChange={(e) => setBetHex(e.target.value)}
+                style={{ marginLeft: 8, width: 220 }}
+              />
+            </label>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <label>
+              ETH amount:
+              <input
+                value={betEth}
+                onChange={(e) => setBetEth(e.target.value)}
+                style={{ marginLeft: 8, width: 120 }}
+              />
+            </label>
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <button onClick={placeBet}>placeBet (payable)</button>
+          </div>
+        </section>
+  
+        <section style={{ margin: '16px 0', padding: 16, border: '1px solid #eee', borderRadius: 12 }}>
+          <h3>Oracle / Result</h3>
+          <label>
+            Result (hex bytes):
+            <input
+              value={resultHex}
+              onChange={(e) => setResultHex(e.target.value)}
+              style={{ marginLeft: 8, width: 220 }}
+            />
+          </label>
+          <div style={{ marginTop: 12 }}>
+            <button onClick={fulfillResult}>fulfillResult</button>
+          </div>
+        </section>
+  
+        <section style={{ margin: '16px 0', padding: 16, border: '1px solid #eee', borderRadius: 12 }}>
+          <h3>Claim & Info</h3>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={claim}>claim</button>
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <p>
+              Tx: {hash ? `${hash}` : '—'} {isPending && ' (pending)'} {isConfirming && ' (confirming)'}{' '}
+              {isConfirmed && ' ✅ confirmed'}
+            </p>
+            <p>Bet count: {betCount?.toString?.() ?? '—'}</p>
+            <p>Round info: {roundInfo ? JSON.stringify(roundInfo) : '—'}</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+  
+  const styles: { [key: string]: React.CSSProperties } = {
+    page: {
+      maxWidth: 700,
+      margin: '0 auto',
+      padding: 30,
+      fontFamily: 'system-ui, sans-serif',
+      backgroundColor: '#f9fafc',
+    },
+    header: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 25,
+    },
+    walletBox: { display: 'flex', alignItems: 'center', gap: 10 },
+    wallet: {
+      background: '#eaf5ff',
+      padding: '6px 12px',
+      borderRadius: 8,
+      fontSize: 14,
+      border: '1px solid #cde4ff',
+    },
+    connectBtn: {
+      background: '#0070f3',
+      color: 'white',
+      border: 'none',
+      padding: '8px 14px',
+      borderRadius: 6,
+      cursor: 'pointer',
+      transition: '0.2s',
+    },
+    disconnectBtn: {
+      background: '#e53e3e',
+      color: 'white',
+      border: 'none',
+      padding: '8px 14px',
+      borderRadius: 6,
+      cursor: 'pointer',
+    },
+    card: {
+      background: 'white',
+      padding: 20,
+      marginBottom: 20,
+      borderRadius: 12,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+    },
+    row: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    btnRow: {
+      display: 'flex',
+      gap: 10,
+      marginTop: 12,
+    },
+    mainBtn: {
+      background: '#0a7cff',
+      color: 'white',
+      border: 'none',
+      padding: '10px 16px',
+      borderRadius: 8,
+      cursor: 'pointer',
+      marginTop: 8,
+    },
+  };

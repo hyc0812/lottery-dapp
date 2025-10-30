@@ -20,11 +20,11 @@
     "baseUrl": "."
   },
   "include": [
-    "lottery-frontend/next-env.d.ts",
+    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx"
-, "lottery-frontend/node_modules/pages/index.tsx.bak", "lottery-frontend/node_modules/pages/index.tsx.bak1"  ],
+, "pages/index.tsx.bak", "pages/index.tsx.bak1"  ],
   "exclude": [
-    "lottery-frontend/node_modules"
+    "node_modules"
   ]
 }

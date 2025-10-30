@@ -1,0 +1,1828 @@
+(globalThis.TURBOPACK || (globalThis.TURBOPACK = [])).push([typeof document === "object" ? document.currentScript : undefined,
+"[turbopack]/browser/dev/hmr-client/hmr-client.ts [client] (ecmascript)", ((__turbopack_context__) => {
+"use strict";
+
+/// <reference path="../../../shared/runtime-types.d.ts" />
+/// <reference path="../../runtime/base/dev-globals.d.ts" />
+/// <reference path="../../runtime/base/dev-protocol.d.ts" />
+/// <reference path="../../runtime/base/dev-extensions.ts" />
+__turbopack_context__.s([
+    "connect",
+    ()=>connect,
+    "setHooks",
+    ()=>setHooks,
+    "subscribeToUpdate",
+    ()=>subscribeToUpdate
+]);
+function connect({ addMessageListener, sendMessage, onUpdateError = console.error }) {
+    addMessageListener((msg)=>{
+        switch(msg.type){
+            case 'turbopack-connected':
+                handleSocketConnected(sendMessage);
+                break;
+            default:
+                try {
+                    if (Array.isArray(msg.data)) {
+                        for(let i = 0; i < msg.data.length; i++){
+                            handleSocketMessage(msg.data[i]);
+                        }
+                    } else {
+                        handleSocketMessage(msg.data);
+                    }
+                    applyAggregatedUpdates();
+                } catch (e) {
+                    console.warn('[Fast Refresh] performing full reload\n\n' + "Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.\n" + 'You might have a file which exports a React component but also exports a value that is imported by a non-React component file.\n' + 'Consider migrating the non-React component export to a separate file and importing it into both files.\n\n' + 'It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.\n' + 'Fast Refresh requires at least one parent function component in your React tree.');
+                    onUpdateError(e);
+                    location.reload();
+                }
+                break;
+        }
+    });
+    const queued = globalThis.TURBOPACK_CHUNK_UPDATE_LISTENERS;
+    if (queued != null && !Array.isArray(queued)) {
+        throw new Error('A separate HMR handler was already registered');
+    }
+    globalThis.TURBOPACK_CHUNK_UPDATE_LISTENERS = {
+        push: ([chunkPath, callback])=>{
+            subscribeToChunkUpdate(chunkPath, sendMessage, callback);
+        }
+    };
+    if (Array.isArray(queued)) {
+        for (const [chunkPath, callback] of queued){
+            subscribeToChunkUpdate(chunkPath, sendMessage, callback);
+        }
+    }
+}
+const updateCallbackSets = new Map();
+function sendJSON(sendMessage, message) {
+    sendMessage(JSON.stringify(message));
+}
+function resourceKey(resource) {
+    return JSON.stringify({
+        path: resource.path,
+        headers: resource.headers || null
+    });
+}
+function subscribeToUpdates(sendMessage, resource) {
+    sendJSON(sendMessage, {
+        type: 'turbopack-subscribe',
+        ...resource
+    });
+    return ()=>{
+        sendJSON(sendMessage, {
+            type: 'turbopack-unsubscribe',
+            ...resource
+        });
+    };
+}
+function handleSocketConnected(sendMessage) {
+    for (const key of updateCallbackSets.keys()){
+        subscribeToUpdates(sendMessage, JSON.parse(key));
+    }
+}
+// we aggregate all pending updates until the issues are resolved
+const chunkListsWithPendingUpdates = new Map();
+function aggregateUpdates(msg) {
+    const key = resourceKey(msg.resource);
+    let aggregated = chunkListsWithPendingUpdates.get(key);
+    if (aggregated) {
+        aggregated.instruction = mergeChunkListUpdates(aggregated.instruction, msg.instruction);
+    } else {
+        chunkListsWithPendingUpdates.set(key, msg);
+    }
+}
+function applyAggregatedUpdates() {
+    if (chunkListsWithPendingUpdates.size === 0) return;
+    hooks.beforeRefresh();
+    for (const msg of chunkListsWithPendingUpdates.values()){
+        triggerUpdate(msg);
+    }
+    chunkListsWithPendingUpdates.clear();
+    finalizeUpdate();
+}
+function mergeChunkListUpdates(updateA, updateB) {
+    let chunks;
+    if (updateA.chunks != null) {
+        if (updateB.chunks == null) {
+            chunks = updateA.chunks;
+        } else {
+            chunks = mergeChunkListChunks(updateA.chunks, updateB.chunks);
+        }
+    } else if (updateB.chunks != null) {
+        chunks = updateB.chunks;
+    }
+    let merged;
+    if (updateA.merged != null) {
+        if (updateB.merged == null) {
+            merged = updateA.merged;
+        } else {
+            // Since `merged` is an array of updates, we need to merge them all into
+            // one, consistent update.
+            // Since there can only be `EcmascriptMergeUpdates` in the array, there is
+            // no need to key on the `type` field.
+            let update = updateA.merged[0];
+            for(let i = 1; i < updateA.merged.length; i++){
+                update = mergeChunkListEcmascriptMergedUpdates(update, updateA.merged[i]);
+            }
+            for(let i = 0; i < updateB.merged.length; i++){
+                update = mergeChunkListEcmascriptMergedUpdates(update, updateB.merged[i]);
+            }
+            merged = [
+                update
+            ];
+        }
+    } else if (updateB.merged != null) {
+        merged = updateB.merged;
+    }
+    return {
+        type: 'ChunkListUpdate',
+        chunks,
+        merged
+    };
+}
+function mergeChunkListChunks(chunksA, chunksB) {
+    const chunks = {};
+    for (const [chunkPath, chunkUpdateA] of Object.entries(chunksA)){
+        const chunkUpdateB = chunksB[chunkPath];
+        if (chunkUpdateB != null) {
+            const mergedUpdate = mergeChunkUpdates(chunkUpdateA, chunkUpdateB);
+            if (mergedUpdate != null) {
+                chunks[chunkPath] = mergedUpdate;
+            }
+        } else {
+            chunks[chunkPath] = chunkUpdateA;
+        }
+    }
+    for (const [chunkPath, chunkUpdateB] of Object.entries(chunksB)){
+        if (chunks[chunkPath] == null) {
+            chunks[chunkPath] = chunkUpdateB;
+        }
+    }
+    return chunks;
+}
+function mergeChunkUpdates(updateA, updateB) {
+    if (updateA.type === 'added' && updateB.type === 'deleted' || updateA.type === 'deleted' && updateB.type === 'added') {
+        return undefined;
+    }
+    if (updateA.type === 'partial') {
+        invariant(updateA.instruction, 'Partial updates are unsupported');
+    }
+    if (updateB.type === 'partial') {
+        invariant(updateB.instruction, 'Partial updates are unsupported');
+    }
+    return undefined;
+}
+function mergeChunkListEcmascriptMergedUpdates(mergedA, mergedB) {
+    const entries = mergeEcmascriptChunkEntries(mergedA.entries, mergedB.entries);
+    const chunks = mergeEcmascriptChunksUpdates(mergedA.chunks, mergedB.chunks);
+    return {
+        type: 'EcmascriptMergedUpdate',
+        entries,
+        chunks
+    };
+}
+function mergeEcmascriptChunkEntries(entriesA, entriesB) {
+    return {
+        ...entriesA,
+        ...entriesB
+    };
+}
+function mergeEcmascriptChunksUpdates(chunksA, chunksB) {
+    if (chunksA == null) {
+        return chunksB;
+    }
+    if (chunksB == null) {
+        return chunksA;
+    }
+    const chunks = {};
+    for (const [chunkPath, chunkUpdateA] of Object.entries(chunksA)){
+        const chunkUpdateB = chunksB[chunkPath];
+        if (chunkUpdateB != null) {
+            const mergedUpdate = mergeEcmascriptChunkUpdates(chunkUpdateA, chunkUpdateB);
+            if (mergedUpdate != null) {
+                chunks[chunkPath] = mergedUpdate;
+            }
+        } else {
+            chunks[chunkPath] = chunkUpdateA;
+        }
+    }
+    for (const [chunkPath, chunkUpdateB] of Object.entries(chunksB)){
+        if (chunks[chunkPath] == null) {
+            chunks[chunkPath] = chunkUpdateB;
+        }
+    }
+    if (Object.keys(chunks).length === 0) {
+        return undefined;
+    }
+    return chunks;
+}
+function mergeEcmascriptChunkUpdates(updateA, updateB) {
+    if (updateA.type === 'added' && updateB.type === 'deleted') {
+        // These two completely cancel each other out.
+        return undefined;
+    }
+    if (updateA.type === 'deleted' && updateB.type === 'added') {
+        const added = [];
+        const deleted = [];
+        const deletedModules = new Set(updateA.modules ?? []);
+        const addedModules = new Set(updateB.modules ?? []);
+        for (const moduleId of addedModules){
+            if (!deletedModules.has(moduleId)) {
+                added.push(moduleId);
+            }
+        }
+        for (const moduleId of deletedModules){
+            if (!addedModules.has(moduleId)) {
+                deleted.push(moduleId);
+            }
+        }
+        if (added.length === 0 && deleted.length === 0) {
+            return undefined;
+        }
+        return {
+            type: 'partial',
+            added,
+            deleted
+        };
+    }
+    if (updateA.type === 'partial' && updateB.type === 'partial') {
+        const added = new Set([
+            ...updateA.added ?? [],
+            ...updateB.added ?? []
+        ]);
+        const deleted = new Set([
+            ...updateA.deleted ?? [],
+            ...updateB.deleted ?? []
+        ]);
+        if (updateB.added != null) {
+            for (const moduleId of updateB.added){
+                deleted.delete(moduleId);
+            }
+        }
+        if (updateB.deleted != null) {
+            for (const moduleId of updateB.deleted){
+                added.delete(moduleId);
+            }
+        }
+        return {
+            type: 'partial',
+            added: [
+                ...added
+            ],
+            deleted: [
+                ...deleted
+            ]
+        };
+    }
+    if (updateA.type === 'added' && updateB.type === 'partial') {
+        const modules = new Set([
+            ...updateA.modules ?? [],
+            ...updateB.added ?? []
+        ]);
+        for (const moduleId of updateB.deleted ?? []){
+            modules.delete(moduleId);
+        }
+        return {
+            type: 'added',
+            modules: [
+                ...modules
+            ]
+        };
+    }
+    if (updateA.type === 'partial' && updateB.type === 'deleted') {
+        // We could eagerly return `updateB` here, but this would potentially be
+        // incorrect if `updateA` has added modules.
+        const modules = new Set(updateB.modules ?? []);
+        if (updateA.added != null) {
+            for (const moduleId of updateA.added){
+                modules.delete(moduleId);
+            }
+        }
+        return {
+            type: 'deleted',
+            modules: [
+                ...modules
+            ]
+        };
+    }
+    // Any other update combination is invalid.
+    return undefined;
+}
+function invariant(_, message) {
+    throw new Error(`Invariant: ${message}`);
+}
+const CRITICAL = [
+    'bug',
+    'error',
+    'fatal'
+];
+function compareByList(list, a, b) {
+    const aI = list.indexOf(a) + 1 || list.length;
+    const bI = list.indexOf(b) + 1 || list.length;
+    return aI - bI;
+}
+const chunksWithIssues = new Map();
+function emitIssues() {
+    const issues = [];
+    const deduplicationSet = new Set();
+    for (const [_, chunkIssues] of chunksWithIssues){
+        for (const chunkIssue of chunkIssues){
+            if (deduplicationSet.has(chunkIssue.formatted)) continue;
+            issues.push(chunkIssue);
+            deduplicationSet.add(chunkIssue.formatted);
+        }
+    }
+    sortIssues(issues);
+    hooks.issues(issues);
+}
+function handleIssues(msg) {
+    const key = resourceKey(msg.resource);
+    let hasCriticalIssues = false;
+    for (const issue of msg.issues){
+        if (CRITICAL.includes(issue.severity)) {
+            hasCriticalIssues = true;
+        }
+    }
+    if (msg.issues.length > 0) {
+        chunksWithIssues.set(key, msg.issues);
+    } else if (chunksWithIssues.has(key)) {
+        chunksWithIssues.delete(key);
+    }
+    emitIssues();
+    return hasCriticalIssues;
+}
+const SEVERITY_ORDER = [
+    'bug',
+    'fatal',
+    'error',
+    'warning',
+    'info',
+    'log'
+];
+const CATEGORY_ORDER = [
+    'parse',
+    'resolve',
+    'code generation',
+    'rendering',
+    'typescript',
+    'other'
+];
+function sortIssues(issues) {
+    issues.sort((a, b)=>{
+        const first = compareByList(SEVERITY_ORDER, a.severity, b.severity);
+        if (first !== 0) return first;
+        return compareByList(CATEGORY_ORDER, a.category, b.category);
+    });
+}
+const hooks = {
+    beforeRefresh: ()=>{},
+    refresh: ()=>{},
+    buildOk: ()=>{},
+    issues: (_issues)=>{}
+};
+function setHooks(newHooks) {
+    Object.assign(hooks, newHooks);
+}
+function handleSocketMessage(msg) {
+    sortIssues(msg.issues);
+    handleIssues(msg);
+    switch(msg.type){
+        case 'issues':
+            break;
+        case 'partial':
+            // aggregate updates
+            aggregateUpdates(msg);
+            break;
+        default:
+            // run single update
+            const runHooks = chunkListsWithPendingUpdates.size === 0;
+            if (runHooks) hooks.beforeRefresh();
+            triggerUpdate(msg);
+            if (runHooks) finalizeUpdate();
+            break;
+    }
+}
+function finalizeUpdate() {
+    hooks.refresh();
+    hooks.buildOk();
+    // This is used by the Next.js integration test suite to notify it when HMR
+    // updates have been completed.
+    // TODO: Only run this in test environments (gate by `process.env.__NEXT_TEST_MODE`)
+    if (globalThis.__NEXT_HMR_CB) {
+        globalThis.__NEXT_HMR_CB();
+        globalThis.__NEXT_HMR_CB = null;
+    }
+}
+function subscribeToChunkUpdate(chunkListPath, sendMessage, callback) {
+    return subscribeToUpdate({
+        path: chunkListPath
+    }, sendMessage, callback);
+}
+function subscribeToUpdate(resource, sendMessage, callback) {
+    const key = resourceKey(resource);
+    let callbackSet;
+    const existingCallbackSet = updateCallbackSets.get(key);
+    if (!existingCallbackSet) {
+        callbackSet = {
+            callbacks: new Set([
+                callback
+            ]),
+            unsubscribe: subscribeToUpdates(sendMessage, resource)
+        };
+        updateCallbackSets.set(key, callbackSet);
+    } else {
+        existingCallbackSet.callbacks.add(callback);
+        callbackSet = existingCallbackSet;
+    }
+    return ()=>{
+        callbackSet.callbacks.delete(callback);
+        if (callbackSet.callbacks.size === 0) {
+            callbackSet.unsubscribe();
+            updateCallbackSets.delete(key);
+        }
+    };
+}
+function triggerUpdate(msg) {
+    const key = resourceKey(msg.resource);
+    const callbackSet = updateCallbackSets.get(key);
+    if (!callbackSet) {
+        return;
+    }
+    for (const callback of callbackSet.callbacks){
+        callback(msg);
+    }
+    if (msg.type === 'notFound') {
+        // This indicates that the resource which we subscribed to either does not exist or
+        // has been deleted. In either case, we should clear all update callbacks, so if a
+        // new subscription is created for the same resource, it will send a new "subscribe"
+        // message to the server.
+        // No need to send an "unsubscribe" message to the server, it will have already
+        // dropped the update stream before sending the "notFound" message.
+        updateCallbackSets.delete(key);
+    }
+}
+}),
+"[project]/Downloads/lottery-dapp/lottery-frontend/lib/abi.ts [client] (ecmascript)", ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.s([
+    "lotteryAbi",
+    ()=>lotteryAbi
+]);
+const lotteryAbi = [
+    {
+        "_format": "hh3-artifact-1",
+        "contractName": "LotteryPool",
+        "sourceName": "contracts/lotteryPool.sol",
+        "abi": [
+            {
+                "inputs": [],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "bytes",
+                        "name": "bet",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "BetPlaced",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Claimed",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "previousOwner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "newOwner",
+                        "type": "address"
+                    }
+                ],
+                "name": "OwnershipTransferred",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    }
+                ],
+                "name": "Paused",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "bytes",
+                        "name": "result",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "ResultFulfilled",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "RoundClosed",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "RoundFinalized",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "closeTime",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "RoundOpened",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    }
+                ],
+                "name": "Unpaused",
+                "type": "event"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "claim",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "closeRound",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "currentRoundId",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "finalizeRound",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "result",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "fulfillResult",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getBetCount",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    }
+                ],
+                "name": "getClaimable",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getRoundInfo",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "open",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "finalized",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "totalPool",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "closeTime",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "result",
+                        "type": "bytes"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "closeTime",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "openRound",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "owner",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "pause",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "paused",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "roundId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "betData",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "placeBet",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "renounceOwnership",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "newOwner",
+                        "type": "address"
+                    }
+                ],
+                "name": "transferOwnership",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "unpause",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "stateMutability": "payable",
+                "type": "receive"
+            }
+        ],
+        "bytecode": "0x6080604052348015600e575f5ffd5b506016336028565b600180556002805460ff191690556077565b5f80546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b61147f806100845f395ff3fe6080604052600436106100f2575f3560e01c80638456cb59116100875780639cbe5efd116100575780639cbe5efd14610283578063b961cbe114610298578063bde22ae0146102b7578063f2fde38b146102d6575f5ffd5b80638456cb59146101fa57806388c3ffb01461020e57806388e01a981461023e5780638da5cb5b1461025d575f5ffd5b80634d1e4d7a116100c25780634d1e4d7a146101645780635c975abb146101835780636b7128ec146101aa578063715018a6146101e6575f5ffd5b80633469f6e2146100fd57806335d2a2691461011e578063379607f5146101315780633f4ba83a14610150575f5ffd5b366100f957005b5f5ffd5b348015610108575f5ffd5b5061011c610117366004610f9e565b6102f5565b005b61011c61012c366004610fb5565b6104ac565b34801561013c575f5ffd5b5061011c61014b366004610f9e565b6106d8565b34801561015b575f5ffd5b5061011c610899565b34801561016f575f5ffd5b5061011c61017e366004610fb5565b6108ab565b34801561018e575f5ffd5b5060025460ff1660405190151581526020015b60405180910390f35b3480156101b5575f5ffd5b506101d86101c4366004610f9e565b5f9081526003602052604090206005015490565b6040519081526020016101a1565b3480156101f1575f5ffd5b5061011c6109d4565b348015610205575f5ffd5b5061011c6109e5565b348015610219575f5ffd5b5061022d610228366004610f9e565b6109f5565b6040516101a195949392919061102c565b348015610249575f5ffd5b5061011c610258366004610f9e565b610acf565b348015610268575f5ffd5b505f546040516001600160a01b0390911681526020016101a1565b34801561028e575f5ffd5b506101d860045481565b3480156102a3575f5ffd5b506101d86102b236600461109c565b610b91565b3480156102c2575f5ffd5b5061011c6102d1366004610f9e565b610bbd565b3480156102e1575f5ffd5b5061011c6102f03660046110c6565b610d09565b6102fd610d7f565b5f818152600360205260408120548291036103335760405162461bcd60e51b815260040161032a906110e6565b60405180910390fd5b61033b610dd8565b5f8281526003602052604090206001810154610100900460ff16156103965760405162461bcd60e51b8152602060048201526011602482015270105b1c9958591e48199a5b985b1a5e9959607a1b604482015260640161032a565b5f8160030180546103a690611114565b9050116103e65760405162461bcd60e51b815260206004820152600e60248201526d14995cdd5b1d081b9bdd081cd95d60921b604482015260640161032a565b60018101805461ff0019166101001790556005810154156104745760058101546040515f919061041a90600385019061114c565b60405190819003902061042d91906111bd565b90505f826005018281548110610445576104456111dc565b5f91825260208083206004870154600390930201546001600160a01b0316835260068601905260409091205550505b60405183907fd49620ec6474d72a2f05dd60f5ab59ad0d2d9d29090cb3b81defc30db3d510c3905f90a2506104a860018055565b5050565b6104b4610e31565b5f838152600360205260408120548491036104e15760405162461bcd60e51b815260040161032a906110e6565b5f84815260036020526040902060010154849060ff166105345760405162461bcd60e51b815260206004820152600e60248201526d2937bab732103737ba1037b832b760911b604482015260640161032a565b5f858152600360205260409020600281015442106105855760405162461bcd60e51b815260206004820152600e60248201526d10995d1d1a5b99c818db1bdcd95960921b604482015260640161032a565b5f34116105c45760405162461bcd60e51b815260206004820152600d60248201526c09aeae6e840e6cadcc8408aa89609b1b604482015260640161032a565b806005016040518060600160405280336001600160a01b0316815260200187878080601f0160208091040260200160405190810160405280939291908181526020018383808284375f9201829052509385525050346020938401525083546001808201865594825290829020835160039092020180546001600160a01b0319166001600160a01b0390921691909117815590820151919290919082019061066b9082611250565b5060408201518160020155505034816004015f82825461068b919061130b565b9091555050604051339087907f630a6195a554c6e786b4e897e8533d264bba81ffd65f3a27c55fa70d45bf5e8b906106c89034908a908a90611352565b60405180910390a3505050505050565b6106e0610dd8565b5f8181526003602052604081205482910361070d5760405162461bcd60e51b815260040161032a906110e6565b5f8281526003602052604090206001810154610100900460ff166107695760405162461bcd60e51b8152602060048201526013602482015272149bdd5b99081b9bdd08199a5b985b1a5e9959606a1b604482015260640161032a565b335f908152600682016020526040902054806107ba5760405162461bcd60e51b815260206004820152601060248201526f4e6f7468696e6720746f20636c61696d60801b604482015260640161032a565b335f8181526006840160205260408082208290555190919083908381818185875af1925050503d805f811461080a576040519150601f19603f3d011682016040523d82523d5f602084013e61080f565b606091505b50509050806108525760405162461bcd60e51b815260206004820152600f60248201526e151c985b9cd9995c8819985a5b1959608a1b604482015260640161032a565b604051828152339086907f4ec90e965519d92681267467f775ada5bd214aa92c0dc93d90a5e880ce9ed0269060200160405180910390a35050505061089660018055565b50565b6108a1610d7f565b6108a9610e77565b565b6108b3610d7f565b5f838152600360205260408120548491036108e05760405162461bcd60e51b815260040161032a906110e6565b5f8481526003602052604090206001810154610100900460ff161561093b5760405162461bcd60e51b8152602060048201526011602482015270105b1c9958591e48199a5b985b1a5e9959607a1b604482015260640161032a565b600181015460ff16156109835760405162461bcd60e51b815260206004820152601060248201526f2937bab7321039ba34b6361037b832b760811b604482015260640161032a565b60038101610992848683611374565b50847fbd4e8b5c8e300aed58042aa1996e43a323da45605ea984958aa6d340272332ba85856040516109c592919061142e565b60405180910390a25050505050565b6109dc610d7f565b6108a95f610ec9565b6109ed610d7f565b6108a9610f18565b5f81815260036020819052604082206001810154600482015460028301549383018054869586958695606095919460ff808316956101009093041693918190610a3d90611114565b80601f0160208091040260200160405190810160405280929190818152602001828054610a6990611114565b8015610ab45780601f10610a8b57610100808354040283529160200191610ab4565b820191905f5260205f20905b815481529060010190602001808311610a9757829003601f168201915b50505050509050955095509550955095505091939590929450565b610ad7610d7f565b5f81815260036020526040812054829103610b045760405162461bcd60e51b815260040161032a906110e6565b5f828152600360205260409020600181015460ff16610b565760405162461bcd60e51b815260206004820152600e60248201526d105b1c9958591e4818db1bdcd95960921b604482015260640161032a565b60018101805460ff1916905560405183907fe9f7d7fd0b133404f0ccff737d6f3594748e04bc5507adfaed35835ef9893711905f90a2505050565b5f8281526003602090815260408083206001600160a01b03851684526006019091529020545b92915050565b610bc5610d7f565b610bcd610e31565b6004541580610bf457506004545f90815260036020526040902060010154610100900460ff165b610c405760405162461bcd60e51b815260206004820152601c60248201527f50726576696f757320726f756e64206e6f742066696e616c697a656400000000604482015260640161032a565b428111610c835760405162461bcd60e51b8152602060048201526011602482015270496e76616c696420636c6f736554696d6560781b604482015260640161032a565b600160045f828254610c95919061130b565b9091555050600480545f81815260036020526040908190209182556001808301805460ff1916909117905560028201849055915491519091907fd5a850d069d7216a3c3e54842d8e62fae0a8a37d00b6871658002d817f02c82390610cfd9085815260200190565b60405180910390a25050565b610d11610d7f565b6001600160a01b038116610d765760405162461bcd60e51b815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201526564647265737360d01b606482015260840161032a565b61089681610ec9565b5f546001600160a01b031633146108a95760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161032a565b600260015403610e2a5760405162461bcd60e51b815260206004820152601f60248201527f5265656e7472616e637947756172643a207265656e7472616e742063616c6c00604482015260640161032a565b6002600155565b60025460ff16156108a95760405162461bcd60e51b815260206004820152601060248201526f14185d5cd8589b194e881c185d5cd95960821b604482015260640161032a565b610e7f610f55565b6002805460ff191690557f5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa335b6040516001600160a01b03909116815260200160405180910390a1565b5f80546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b610f20610e31565b6002805460ff191660011790557f62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a258610eac3390565b60025460ff166108a95760405162461bcd60e51b815260206004820152601460248201527314185d5cd8589b194e881b9bdd081c185d5cd95960621b604482015260640161032a565b5f60208284031215610fae575f5ffd5b5035919050565b5f5f5f60408486031215610fc7575f5ffd5b83359250602084013567ffffffffffffffff811115610fe4575f5ffd5b8401601f81018613610ff4575f5ffd5b803567ffffffffffffffff81111561100a575f5ffd5b86602082840101111561101b575f5ffd5b939660209190910195509293505050565b8515158152841515602082015283604082015282606082015260a060808201525f82518060a0840152806020850160c085015e5f60c0828501015260c0601f19601f8301168401019150509695505050505050565b80356001600160a01b0381168114611097575f5ffd5b919050565b5f5f604083850312156110ad575f5ffd5b823591506110bd60208401611081565b90509250929050565b5f602082840312156110d6575f5ffd5b6110df82611081565b9392505050565b602080825260149082015273149bdd5b9908191bd95cc81b9bdd08195e1a5cdd60621b604082015260600190565b600181811c9082168061112857607f821691505b60208210810361114657634e487b7160e01b5f52602260045260245ffd5b50919050565b5f5f835461115981611114565b6001821680156111705760018114611185576111b2565b60ff19831686528115158202860193506111b2565b865f5260205f205f5b838110156111aa5781548882015260019091019060200161118e565b505081860193505b509195945050505050565b5f826111d757634e487b7160e01b5f52601260045260245ffd5b500690565b634e487b7160e01b5f52603260045260245ffd5b634e487b7160e01b5f52604160045260245ffd5b601f82111561124b57805f5260205f20601f840160051c810160208510156112295750805b601f840160051c820191505b81811015611248575f8155600101611235565b50505b505050565b815167ffffffffffffffff81111561126a5761126a6111f0565b61127e816112788454611114565b84611204565b6020601f8211600181146112b0575f83156112995750848201515b5f19600385901b1c1916600184901b178455611248565b5f84815260208120601f198516915b828110156112df57878501518255602094850194600190920191016112bf565b50848210156112fc57868401515f19600387901b60f8161c191681555b50505050600190811b01905550565b80820180821115610bb757634e487b7160e01b5f52601160045260245ffd5b81835281816020850137505f828201602090810191909152601f909101601f19169091010190565b838152604060208201525f61136b60408301848661132a565b95945050505050565b67ffffffffffffffff83111561138c5761138c6111f0565b6113a08361139a8354611114565b83611204565b5f601f8411600181146113d1575f85156113ba5750838201355b5f19600387901b1c1916600186901b178355611248565b5f83815260208120601f198716915b8281101561140057868501358255602094850194600190920191016113e0565b508682101561141c575f1960f88860031b161c19848701351681555b505060018560011b0183555050505050565b602081525f61144160208301848661132a565b94935050505056fea26469706673582212207a172fff9d3514b860fc74ca93e6d6e108fbf3611c137959fb714a91fad3701d64736f6c634300081c0033",
+        "deployedBytecode": "0x6080604052600436106100f2575f3560e01c80638456cb59116100875780639cbe5efd116100575780639cbe5efd14610283578063b961cbe114610298578063bde22ae0146102b7578063f2fde38b146102d6575f5ffd5b80638456cb59146101fa57806388c3ffb01461020e57806388e01a981461023e5780638da5cb5b1461025d575f5ffd5b80634d1e4d7a116100c25780634d1e4d7a146101645780635c975abb146101835780636b7128ec146101aa578063715018a6146101e6575f5ffd5b80633469f6e2146100fd57806335d2a2691461011e578063379607f5146101315780633f4ba83a14610150575f5ffd5b366100f957005b5f5ffd5b348015610108575f5ffd5b5061011c610117366004610f9e565b6102f5565b005b61011c61012c366004610fb5565b6104ac565b34801561013c575f5ffd5b5061011c61014b366004610f9e565b6106d8565b34801561015b575f5ffd5b5061011c610899565b34801561016f575f5ffd5b5061011c61017e366004610fb5565b6108ab565b34801561018e575f5ffd5b5060025460ff1660405190151581526020015b60405180910390f35b3480156101b5575f5ffd5b506101d86101c4366004610f9e565b5f9081526003602052604090206005015490565b6040519081526020016101a1565b3480156101f1575f5ffd5b5061011c6109d4565b348015610205575f5ffd5b5061011c6109e5565b348015610219575f5ffd5b5061022d610228366004610f9e565b6109f5565b6040516101a195949392919061102c565b348015610249575f5ffd5b5061011c610258366004610f9e565b610acf565b348015610268575f5ffd5b505f546040516001600160a01b0390911681526020016101a1565b34801561028e575f5ffd5b506101d860045481565b3480156102a3575f5ffd5b506101d86102b236600461109c565b610b91565b3480156102c2575f5ffd5b5061011c6102d1366004610f9e565b610bbd565b3480156102e1575f5ffd5b5061011c6102f03660046110c6565b610d09565b6102fd610d7f565b5f818152600360205260408120548291036103335760405162461bcd60e51b815260040161032a906110e6565b60405180910390fd5b61033b610dd8565b5f8281526003602052604090206001810154610100900460ff16156103965760405162461bcd60e51b8152602060048201526011602482015270105b1c9958591e48199a5b985b1a5e9959607a1b604482015260640161032a565b5f8160030180546103a690611114565b9050116103e65760405162461bcd60e51b815260206004820152600e60248201526d14995cdd5b1d081b9bdd081cd95d60921b604482015260640161032a565b60018101805461ff0019166101001790556005810154156104745760058101546040515f919061041a90600385019061114c565b60405190819003902061042d91906111bd565b90505f826005018281548110610445576104456111dc565b5f91825260208083206004870154600390930201546001600160a01b0316835260068601905260409091205550505b60405183907fd49620ec6474d72a2f05dd60f5ab59ad0d2d9d29090cb3b81defc30db3d510c3905f90a2506104a860018055565b5050565b6104b4610e31565b5f838152600360205260408120548491036104e15760405162461bcd60e51b815260040161032a906110e6565b5f84815260036020526040902060010154849060ff166105345760405162461bcd60e51b815260206004820152600e60248201526d2937bab732103737ba1037b832b760911b604482015260640161032a565b5f858152600360205260409020600281015442106105855760405162461bcd60e51b815260206004820152600e60248201526d10995d1d1a5b99c818db1bdcd95960921b604482015260640161032a565b5f34116105c45760405162461bcd60e51b815260206004820152600d60248201526c09aeae6e840e6cadcc8408aa89609b1b604482015260640161032a565b806005016040518060600160405280336001600160a01b0316815260200187878080601f0160208091040260200160405190810160405280939291908181526020018383808284375f9201829052509385525050346020938401525083546001808201865594825290829020835160039092020180546001600160a01b0319166001600160a01b0390921691909117815590820151919290919082019061066b9082611250565b5060408201518160020155505034816004015f82825461068b919061130b565b9091555050604051339087907f630a6195a554c6e786b4e897e8533d264bba81ffd65f3a27c55fa70d45bf5e8b906106c89034908a908a90611352565b60405180910390a3505050505050565b6106e0610dd8565b5f8181526003602052604081205482910361070d5760405162461bcd60e51b815260040161032a906110e6565b5f8281526003602052604090206001810154610100900460ff166107695760405162461bcd60e51b8152602060048201526013602482015272149bdd5b99081b9bdd08199a5b985b1a5e9959606a1b604482015260640161032a565b335f908152600682016020526040902054806107ba5760405162461bcd60e51b815260206004820152601060248201526f4e6f7468696e6720746f20636c61696d60801b604482015260640161032a565b335f8181526006840160205260408082208290555190919083908381818185875af1925050503d805f811461080a576040519150601f19603f3d011682016040523d82523d5f602084013e61080f565b606091505b50509050806108525760405162461bcd60e51b815260206004820152600f60248201526e151c985b9cd9995c8819985a5b1959608a1b604482015260640161032a565b604051828152339086907f4ec90e965519d92681267467f775ada5bd214aa92c0dc93d90a5e880ce9ed0269060200160405180910390a35050505061089660018055565b50565b6108a1610d7f565b6108a9610e77565b565b6108b3610d7f565b5f838152600360205260408120548491036108e05760405162461bcd60e51b815260040161032a906110e6565b5f8481526003602052604090206001810154610100900460ff161561093b5760405162461bcd60e51b8152602060048201526011602482015270105b1c9958591e48199a5b985b1a5e9959607a1b604482015260640161032a565b600181015460ff16156109835760405162461bcd60e51b815260206004820152601060248201526f2937bab7321039ba34b6361037b832b760811b604482015260640161032a565b60038101610992848683611374565b50847fbd4e8b5c8e300aed58042aa1996e43a323da45605ea984958aa6d340272332ba85856040516109c592919061142e565b60405180910390a25050505050565b6109dc610d7f565b6108a95f610ec9565b6109ed610d7f565b6108a9610f18565b5f81815260036020819052604082206001810154600482015460028301549383018054869586958695606095919460ff808316956101009093041693918190610a3d90611114565b80601f0160208091040260200160405190810160405280929190818152602001828054610a6990611114565b8015610ab45780601f10610a8b57610100808354040283529160200191610ab4565b820191905f5260205f20905b815481529060010190602001808311610a9757829003601f168201915b50505050509050955095509550955095505091939590929450565b610ad7610d7f565b5f81815260036020526040812054829103610b045760405162461bcd60e51b815260040161032a906110e6565b5f828152600360205260409020600181015460ff16610b565760405162461bcd60e51b815260206004820152600e60248201526d105b1c9958591e4818db1bdcd95960921b604482015260640161032a565b60018101805460ff1916905560405183907fe9f7d7fd0b133404f0ccff737d6f3594748e04bc5507adfaed35835ef9893711905f90a2505050565b5f8281526003602090815260408083206001600160a01b03851684526006019091529020545b92915050565b610bc5610d7f565b610bcd610e31565b6004541580610bf457506004545f90815260036020526040902060010154610100900460ff165b610c405760405162461bcd60e51b815260206004820152601c60248201527f50726576696f757320726f756e64206e6f742066696e616c697a656400000000604482015260640161032a565b428111610c835760405162461bcd60e51b8152602060048201526011602482015270496e76616c696420636c6f736554696d6560781b604482015260640161032a565b600160045f828254610c95919061130b565b9091555050600480545f81815260036020526040908190209182556001808301805460ff1916909117905560028201849055915491519091907fd5a850d069d7216a3c3e54842d8e62fae0a8a37d00b6871658002d817f02c82390610cfd9085815260200190565b60405180910390a25050565b610d11610d7f565b6001600160a01b038116610d765760405162461bcd60e51b815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201526564647265737360d01b606482015260840161032a565b61089681610ec9565b5f546001600160a01b031633146108a95760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161032a565b600260015403610e2a5760405162461bcd60e51b815260206004820152601f60248201527f5265656e7472616e637947756172643a207265656e7472616e742063616c6c00604482015260640161032a565b6002600155565b60025460ff16156108a95760405162461bcd60e51b815260206004820152601060248201526f14185d5cd8589b194e881c185d5cd95960821b604482015260640161032a565b610e7f610f55565b6002805460ff191690557f5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa335b6040516001600160a01b03909116815260200160405180910390a1565b5f80546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b610f20610e31565b6002805460ff191660011790557f62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a258610eac3390565b60025460ff166108a95760405162461bcd60e51b815260206004820152601460248201527314185d5cd8589b194e881b9bdd081c185d5cd95960621b604482015260640161032a565b5f60208284031215610fae575f5ffd5b5035919050565b5f5f5f60408486031215610fc7575f5ffd5b83359250602084013567ffffffffffffffff811115610fe4575f5ffd5b8401601f81018613610ff4575f5ffd5b803567ffffffffffffffff81111561100a575f5ffd5b86602082840101111561101b575f5ffd5b939660209190910195509293505050565b8515158152841515602082015283604082015282606082015260a060808201525f82518060a0840152806020850160c085015e5f60c0828501015260c0601f19601f8301168401019150509695505050505050565b80356001600160a01b0381168114611097575f5ffd5b919050565b5f5f604083850312156110ad575f5ffd5b823591506110bd60208401611081565b90509250929050565b5f602082840312156110d6575f5ffd5b6110df82611081565b9392505050565b602080825260149082015273149bdd5b9908191bd95cc81b9bdd08195e1a5cdd60621b604082015260600190565b600181811c9082168061112857607f821691505b60208210810361114657634e487b7160e01b5f52602260045260245ffd5b50919050565b5f5f835461115981611114565b6001821680156111705760018114611185576111b2565b60ff19831686528115158202860193506111b2565b865f5260205f205f5b838110156111aa5781548882015260019091019060200161118e565b505081860193505b509195945050505050565b5f826111d757634e487b7160e01b5f52601260045260245ffd5b500690565b634e487b7160e01b5f52603260045260245ffd5b634e487b7160e01b5f52604160045260245ffd5b601f82111561124b57805f5260205f20601f840160051c810160208510156112295750805b601f840160051c820191505b81811015611248575f8155600101611235565b50505b505050565b815167ffffffffffffffff81111561126a5761126a6111f0565b61127e816112788454611114565b84611204565b6020601f8211600181146112b0575f83156112995750848201515b5f19600385901b1c1916600184901b178455611248565b5f84815260208120601f198516915b828110156112df57878501518255602094850194600190920191016112bf565b50848210156112fc57868401515f19600387901b60f8161c191681555b50505050600190811b01905550565b80820180821115610bb757634e487b7160e01b5f52601160045260245ffd5b81835281816020850137505f828201602090810191909152601f909101601f19169091010190565b838152604060208201525f61136b60408301848661132a565b95945050505050565b67ffffffffffffffff83111561138c5761138c6111f0565b6113a08361139a8354611114565b83611204565b5f601f8411600181146113d1575f85156113ba5750838201355b5f19600387901b1c1916600186901b178355611248565b5f83815260208120601f198716915b8281101561140057868501358255602094850194600190920191016113e0565b508682101561141c575f1960f88860031b161c19848701351681555b505060018560011b0183555050505050565b602081525f61144160208301848661132a565b94935050505056fea26469706673582212207a172fff9d3514b860fc74ca93e6d6e108fbf3611c137959fb714a91fad3701d64736f6c634300081c0033",
+        "linkReferences": {},
+        "deployedLinkReferences": {},
+        "immutableReferences": {},
+        "inputSourceName": "project/contracts/lotteryPool.sol",
+        "buildInfoId": "solc-0_8_28-61256eef0fb5b72e076effe999d8f7fac30ec93b"
+    }
+];
+if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
+    __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
+}
+}),
+"[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx [client] (ecmascript)", ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.s([
+    "default",
+    ()=>Home
+]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = /*#__PURE__*/ __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/next/dist/build/polyfills/process.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/react/jsx-dev-runtime.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/react/index.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useAccount$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/wagmi/dist/esm/hooks/useAccount.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useConnect$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/wagmi/dist/esm/hooks/useConnect.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useDisconnect$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/wagmi/dist/esm/hooks/useDisconnect.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useReadContract$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/wagmi/dist/esm/hooks/useReadContract.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useWriteContract$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/wagmi/dist/esm/hooks/useWriteContract.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$usePublicClient$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/wagmi/dist/esm/hooks/usePublicClient.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useBlockNumber$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/wagmi/dist/esm/hooks/useBlockNumber.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f40$wagmi$2f$core$2f$dist$2f$esm$2f$connectors$2f$injected$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/@wagmi/core/dist/esm/connectors/injected.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$lib$2f$abi$2e$ts__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/lib/abi.ts [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$viem$2f$_esm$2f$utils$2f$abi$2f$decodeAbiParameters$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/viem/_esm/utils/abi/decodeAbiParameters.js [client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$viem$2f$_esm$2f$utils$2f$unit$2f$formatEther$2e$js__$5b$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Downloads/lottery-dapp/lottery-frontend/node_modules/viem/_esm/utils/unit/formatEther.js [client] (ecmascript)");
+;
+var _s = __turbopack_context__.k.signature();
+'use client';
+;
+;
+;
+;
+;
+const CONTRACT = ("TURBOPACK compile-time value", "0x5FbDB2315678afecb367f032d93F642f64180aa3");
+function Home() {
+    _s();
+    const { address, isConnected } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useAccount$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useAccount"])();
+    const { connect, connectors } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useConnect$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useConnect"])();
+    const injectedConnector = connectors.find((c)=>c.id === 'injected');
+    const { disconnect } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useDisconnect$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useDisconnect"])();
+    const { writeContractAsync } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useWriteContract$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useWriteContract"])();
+    const [roundId, setRoundId] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useState"])(1);
+    const [closeSeconds, setCloseSeconds] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useState"])(60);
+    const [betHex, setBetHex] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useState"])('0x01');
+    const [betEth, setBetEth] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useState"])('0.001');
+    const [resultHex, setResultHex] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useState"])('0x01');
+    const [owner, setOwner] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const publicClient = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$usePublicClient$2e$js__$5b$client$5d$__$28$ecmascript$29$__["usePublicClient"])();
+    // 🔹 current round
+    const { data: currentRoundIdData, refetch: refetchCurrentRound } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useReadContract$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useReadContract"])({
+        address: CONTRACT,
+        abi: __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$lib$2f$abi$2e$ts__$5b$client$5d$__$28$ecmascript$29$__["lotteryAbi"],
+        functionName: 'currentRoundId'
+    });
+    // 🔹 round info
+    const roundArgs = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "Home.useMemo[roundArgs]": ()=>roundId > 0 ? [
+                BigInt(roundId)
+            ] : undefined
+    }["Home.useMemo[roundArgs]"], [
+        roundId
+    ]);
+    const { data: roundInfo, refetch: refetchRoundInfo, isFetching: isRoundInfoLoading } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useReadContract$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useReadContract"])({
+        address: CONTRACT,
+        abi: __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$lib$2f$abi$2e$ts__$5b$client$5d$__$28$ecmascript$29$__["lotteryAbi"],
+        functionName: 'getRoundInfo',
+        args: roundArgs
+    });
+    const { data: blockNumber } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useBlockNumber$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useBlockNumber"])({
+        watch: true
+    });
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "Home.useEffect": ()=>{
+            if (blockNumber) {
+                refetchCurrentRound();
+                if (roundArgs) refetchRoundInfo();
+            }
+        }
+    }["Home.useEffect"], [
+        blockNumber
+    ]);
+    const refreshRoundData = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "Home.useCallback[refreshRoundData]": ()=>{
+            const promises = [];
+            if (roundArgs) promises.push(refetchRoundInfo());
+            promises.push(refetchCurrentRound());
+            return Promise.allSettled(promises);
+        }
+    }["Home.useCallback[refreshRoundData]"], [
+        refetchCurrentRound,
+        refetchRoundInfo,
+        roundArgs
+    ]);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "Home.useEffect": ()=>{
+            if (currentRoundIdData && roundId === 1) {
+                setRoundId(Number(currentRoundIdData));
+            }
+        }
+    }["Home.useEffect"], [
+        currentRoundIdData,
+        roundId
+    ]);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "Home.useEffect": ()=>{
+            async function fetchOwner() {
+                if (!publicClient) return;
+                try {
+                    const bytecode = await publicClient.getBytecode({
+                        address: CONTRACT
+                    });
+                    if (!bytecode) {
+                        console.error('The configured contract address has no bytecode on the connected chain. Check NEXT_PUBLIC_RPC_URL / NEXT_PUBLIC_CHAIN_ID.');
+                        return;
+                    }
+                    const ownerAddress = await publicClient.readContract({
+                        address: CONTRACT,
+                        abi: __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$lib$2f$abi$2e$ts__$5b$client$5d$__$28$ecmascript$29$__["lotteryAbi"],
+                        functionName: 'owner'
+                    });
+                    setOwner(ownerAddress);
+                } catch (err) {
+                    console.error('Failed to fetch owner', err);
+                }
+            }
+            fetchOwner();
+        }
+    }["Home.useEffect"], [
+        publicClient
+    ]);
+    const totalPoolEth = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "Home.useMemo[totalPoolEth]": ()=>{
+            if (!roundInfo) return null;
+            return (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$viem$2f$_esm$2f$utils$2f$unit$2f$formatEther$2e$js__$5b$client$5d$__$28$ecmascript$29$__["formatEther"])(roundInfo[2]);
+        }
+    }["Home.useMemo[totalPoolEth]"], [
+        roundInfo
+    ]);
+    const winnerAddress = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "Home.useMemo[winnerAddress]": ()=>{
+            if (!roundInfo) return null;
+            const rawResult = roundInfo[4];
+            if (!rawResult || rawResult === '0x') return null;
+            try {
+                const [decodedWinner] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$viem$2f$_esm$2f$utils$2f$abi$2f$decodeAbiParameters$2e$js__$5b$client$5d$__$28$ecmascript$29$__["decodeAbiParameters"])([
+                    {
+                        name: 'winner',
+                        type: 'address'
+                    }
+                ], rawResult);
+                return decodedWinner;
+            } catch  {
+                if (rawResult.length >= 42) {
+                    const last40 = rawResult.slice(-40);
+                    return `0x${last40}`;
+                }
+                return null;
+            }
+        }
+    }["Home.useMemo[winnerAddress]"], [
+        roundInfo
+    ]);
+    const closeTimeDisplay = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$index$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "Home.useMemo[closeTimeDisplay]": ()=>{
+            if (!roundInfo) return null;
+            const closeTime = roundInfo[3];
+            if (!closeTime || closeTime === 0n) return null;
+            const date = new Date(Number(closeTime) * 1000);
+            if (Number.isNaN(date.getTime())) return null;
+            return date.toLocaleString();
+        }
+    }["Home.useMemo[closeTimeDisplay]"], [
+        roundInfo
+    ]);
+    // ---------- Contract Actions ----------
+    const openRound = async ()=>{
+        try {
+            const closeTime = Math.floor(Date.now() / 1000) + closeSeconds;
+            const tx = await writeContractAsync({
+                address: CONTRACT,
+                abi: __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$lib$2f$abi$2e$ts__$5b$client$5d$__$28$ecmascript$29$__["lotteryAbi"],
+                functionName: 'openRound',
+                args: [
+                    BigInt(closeTime)
+                ]
+            });
+            alert(`✅ openRound TX sent: ${tx}`);
+            await refreshRoundData();
+        } catch (e) {
+            alert(`❌ ${e.message}`);
+        }
+    };
+    const closeRound = async ()=>{
+        try {
+            const tx = await writeContractAsync({
+                address: CONTRACT,
+                abi: __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$lib$2f$abi$2e$ts__$5b$client$5d$__$28$ecmascript$29$__["lotteryAbi"],
+                functionName: 'closeRound',
+                args: [
+                    BigInt(roundId)
+                ]
+            });
+            alert(`✅ closeRound TX sent: ${tx}`);
+            await refreshRoundData();
+        } catch (e) {
+            alert(`❌ ${e.message}`);
+        }
+    };
+    const finalizeRound = async ()=>{
+        try {
+            const tx = await writeContractAsync({
+                address: CONTRACT,
+                abi: __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$lib$2f$abi$2e$ts__$5b$client$5d$__$28$ecmascript$29$__["lotteryAbi"],
+                functionName: 'finalizeRound',
+                args: [
+                    BigInt(roundId)
+                ]
+            });
+            alert(`✅ finalizeRound TX sent: ${tx}`);
+            await refreshRoundData();
+        } catch (e) {
+            alert(`❌ ${e.message}`);
+        }
+    };
+    const placeBet = async ()=>{
+        try {
+            const tx = await writeContractAsync({
+                address: CONTRACT,
+                abi: __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$lib$2f$abi$2e$ts__$5b$client$5d$__$28$ecmascript$29$__["lotteryAbi"],
+                functionName: 'placeBet',
+                args: [
+                    BigInt(roundId),
+                    betHex
+                ],
+                value: BigInt(Number(betEth) * 1e18)
+            });
+            alert(`✅ placeBet TX sent: ${tx}`);
+            await refreshRoundData();
+        } catch (e) {
+            alert(`❌ ${e.message}`);
+        }
+    };
+    const fulfillResult = async ()=>{
+        try {
+            const tx = await writeContractAsync({
+                address: CONTRACT,
+                abi: __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$lib$2f$abi$2e$ts__$5b$client$5d$__$28$ecmascript$29$__["lotteryAbi"],
+                functionName: 'fulfillResult',
+                args: [
+                    BigInt(roundId),
+                    resultHex
+                ]
+            });
+            alert(`✅ fulfillResult TX sent: ${tx}`);
+            await refreshRoundData();
+        } catch (e) {
+            alert(`❌ ${e.message}`);
+        }
+    };
+    const claim = async ()=>{
+        try {
+            const tx = await writeContractAsync({
+                address: CONTRACT,
+                abi: __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$lib$2f$abi$2e$ts__$5b$client$5d$__$28$ecmascript$29$__["lotteryAbi"],
+                functionName: 'claim',
+                args: [
+                    BigInt(roundId)
+                ]
+            });
+            alert(`✅ claim TX sent: ${tx}`);
+            await refreshRoundData();
+        } catch (e) {
+            alert(`❌ ${e.message}`);
+        }
+    };
+    // ---------- Render ----------
+    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+        style: styles.page,
+        children: [
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                style: styles.header,
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
+                        style: {
+                            margin: 0
+                        },
+                        children: "🎯 Lottery DApp"
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 244,
+                        columnNumber: 9
+                    }, this),
+                    address && owner && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                        style: {
+                            fontSize: 14,
+                            color: '#444'
+                        },
+                        children: address.toLowerCase() === owner.toLowerCase() ? '🧑‍💼 Role: Owner' : '🎟️ Role: Player'
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 246,
+                        columnNumber: 11
+                    }, this),
+                    isConnected ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        style: styles.walletBox,
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                style: styles.wallet,
+                                children: [
+                                    address?.slice(0, 6),
+                                    "...",
+                                    address?.slice(-4)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 254,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                style: styles.disconnectBtn,
+                                onClick: ()=>disconnect(),
+                                children: "Disconnect"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 257,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 253,
+                        columnNumber: 11
+                    }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                        style: styles.connectBtn,
+                        onClick: ()=>connect({
+                                connector: (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f40$wagmi$2f$core$2f$dist$2f$esm$2f$connectors$2f$injected$2e$js__$5b$client$5d$__$28$ecmascript$29$__["injected"])()
+                            }),
+                        children: "Connect Wallet"
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 262,
+                        columnNumber: 11
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                lineNumber: 243,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                style: styles.card,
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
+                        children: "📊 Round Snapshot"
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 273,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        style: styles.infoGrid,
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                style: styles.infoItem,
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        style: styles.infoLabel,
+                                        children: "Current Round ID"
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 276,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
+                                        children: currentRoundIdData ? currentRoundIdData.toString() : '—'
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 277,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 275,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                style: styles.infoItem,
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        style: styles.infoLabel,
+                                        children: "Viewing Round"
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 282,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
+                                        children: roundId > 0 ? `#${roundId}` : '—'
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 283,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 281,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                style: styles.infoItem,
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        style: styles.infoLabel,
+                                        children: "Total Pool"
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 286,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
+                                        children: isRoundInfoLoading ? 'Loading...' : totalPoolEth ? `${totalPoolEth} ETH` : '—'
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 287,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 285,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                style: styles.infoItem,
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        style: styles.infoLabel,
+                                        children: "Winner"
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 296,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
+                                        children: winnerAddress ?? '—'
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 297,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 295,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                style: styles.infoItem,
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        style: styles.infoLabel,
+                                        children: "Closes At"
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 300,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
+                                        children: closeTimeDisplay ?? '—'
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 301,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 299,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                style: styles.infoItem,
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        style: styles.infoLabel,
+                                        children: "Status"
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 304,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
+                                        children: roundInfo ? roundInfo[1] ? 'Finalized' : roundInfo[0] ? 'Open' : 'Closed' : '—'
+                                    }, void 0, false, {
+                                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                        lineNumber: 305,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 303,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 274,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        style: {
+                            marginTop: 10
+                        },
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                            onClick: refreshRoundData,
+                            style: styles.mainBtn,
+                            children: "🔄 Refresh Data"
+                        }, void 0, false, {
+                            fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                            lineNumber: 317,
+                            columnNumber: 11
+                        }, this)
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 316,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                lineNumber: 272,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                style: styles.card,
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
+                        children: "🎛 Admin / Round Control"
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 325,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        style: styles.row,
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                children: "Round ID:"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 327,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                type: "number",
+                                value: roundId,
+                                onChange: (e)=>setRoundId(parseInt(e.target.value))
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 328,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 326,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        style: styles.row,
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                children: "Close in seconds:"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 335,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                type: "number",
+                                value: closeSeconds,
+                                onChange: (e)=>setCloseSeconds(parseInt(e.target.value))
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 336,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 334,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        style: styles.btnRow,
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                onClick: openRound,
+                                children: "openRound"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 343,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                onClick: closeRound,
+                                children: "closeRound"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 344,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                onClick: finalizeRound,
+                                children: "finalizeRound"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 345,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 342,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                lineNumber: 324,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                style: styles.card,
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
+                        children: "🎲 Player Panel"
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 351,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        style: styles.row,
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                children: "Bet (hex bytes):"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 353,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                value: betHex,
+                                onChange: (e)=>setBetHex(e.target.value)
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 354,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 352,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        style: styles.row,
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                children: "ETH amount:"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 360,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                value: betEth,
+                                onChange: (e)=>setBetEth(e.target.value)
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 361,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 359,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                        style: styles.mainBtn,
+                        onClick: placeBet,
+                        children: "placeBet (payable)"
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 366,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                lineNumber: 350,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                style: styles.card,
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
+                        children: "📜 Oracle / Result"
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 373,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        style: styles.row,
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                children: "Result (hex bytes):"
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 375,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                value: resultHex,
+                                onChange: (e)=>setResultHex(e.target.value)
+                            }, void 0, false, {
+                                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                                lineNumber: 376,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 374,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                        onClick: fulfillResult,
+                        children: "fulfillResult"
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 381,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                lineNumber: 372,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                style: styles.card,
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
+                        children: "💰 Claim Reward"
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 386,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                        onClick: claim,
+                        children: "claim"
+                    }, void 0, false, {
+                        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                        lineNumber: 387,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+                lineNumber: 385,
+                columnNumber: 7
+            }, this)
+        ]
+    }, void 0, true, {
+        fileName: "[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx",
+        lineNumber: 241,
+        columnNumber: 5
+    }, this);
+}
+_s(Home, "11d1gWnUfifZmB/BdGPAJ4ARKL8=", false, function() {
+    return [
+        __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useAccount$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useAccount"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useConnect$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useConnect"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useDisconnect$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useDisconnect"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useWriteContract$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useWriteContract"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$usePublicClient$2e$js__$5b$client$5d$__$28$ecmascript$29$__["usePublicClient"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useReadContract$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useReadContract"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useReadContract$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useReadContract"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$lottery$2d$dapp$2f$lottery$2d$frontend$2f$node_modules$2f$wagmi$2f$dist$2f$esm$2f$hooks$2f$useBlockNumber$2e$js__$5b$client$5d$__$28$ecmascript$29$__["useBlockNumber"]
+    ];
+});
+_c = Home;
+// ---------- Styles ----------
+const styles = {
+    page: {
+        maxWidth: 700,
+        margin: '0 auto',
+        padding: 30,
+        fontFamily: 'system-ui, sans-serif',
+        backgroundColor: '#f9fafc'
+    },
+    header: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20
+    },
+    walletBox: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10
+    },
+    wallet: {
+        background: '#edf2f7',
+        padding: '8px 12px',
+        borderRadius: 8,
+        fontFamily: 'monospace'
+    },
+    connectBtn: {
+        background: '#0a7cff',
+        color: 'white',
+        border: 'none',
+        padding: '10px 16px',
+        borderRadius: 8,
+        cursor: 'pointer'
+    },
+    disconnectBtn: {
+        background: '#e53e3e',
+        color: 'white',
+        border: 'none',
+        padding: '8px 14px',
+        borderRadius: 6,
+        cursor: 'pointer'
+    },
+    card: {
+        background: 'white',
+        padding: 20,
+        marginBottom: 20,
+        borderRadius: 12,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+    },
+    row: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10
+    },
+    infoGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: 16,
+        marginTop: 12
+    },
+    infoItem: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        padding: 12,
+        borderRadius: 10,
+        background: '#f4f7fb',
+        border: '1px solid #e0e6f2'
+    },
+    infoLabel: {
+        fontSize: 12,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        color: '#5b6b81'
+    },
+    btnRow: {
+        display: 'flex',
+        gap: 10,
+        marginTop: 12
+    },
+    mainBtn: {
+        background: '#0a7cff',
+        color: 'white',
+        border: 'none',
+        padding: '10px 16px',
+        borderRadius: 8,
+        cursor: 'pointer',
+        marginTop: 8
+    }
+};
+var _c;
+__turbopack_context__.k.register(_c, "Home");
+if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
+    __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
+}
+}),
+"[next]/entry/page-loader.ts { PAGE => \"[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx [client] (ecmascript)\" } [client] (ecmascript)", ((__turbopack_context__, module, exports) => {
+
+const PAGE_PATH = "/";
+(window.__NEXT_P = window.__NEXT_P || []).push([
+    PAGE_PATH,
+    ()=>{
+        return __turbopack_context__.r("[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx [client] (ecmascript)");
+    }
+]);
+// @ts-expect-error module.hot exists
+if (module.hot) {
+    // @ts-expect-error module.hot exists
+    module.hot.dispose(function() {
+        window.__NEXT_P.push([
+            PAGE_PATH
+        ]);
+    });
+}
+}),
+"[hmr-entry]/hmr-entry.js { ENTRY => \"[project]/Downloads/lottery-dapp/lottery-frontend/pages/index\" }", ((__turbopack_context__) => {
+"use strict";
+
+__turbopack_context__.r("[next]/entry/page-loader.ts { PAGE => \"[project]/Downloads/lottery-dapp/lottery-frontend/pages/index.tsx [client] (ecmascript)\" } [client] (ecmascript)");
+}),
+]);
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__98c96690._.js.map

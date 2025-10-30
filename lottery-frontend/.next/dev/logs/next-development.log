@@ -1,2 +1,1 @@
-[00:00:01.474] Server  LOG      ✓ Ready in 958ms
-[00:00:16.518] Browser ERROR   The configured contract address has no bytecode on the connected chain. Check NEXT_PUBLIC_RPC_URL / NEXT_PUBLIC_CHAIN_ID.
+[00:00:01.445] Server  LOG      ✓ Ready in 977ms
